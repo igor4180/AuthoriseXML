@@ -1,5 +1,4 @@
-﻿using AuthoriseXML;
-using System.Xml;
+﻿using System.Xml;
 using System.Xml.Linq;
 
 namespace AuthoriseXML
@@ -9,81 +8,60 @@ namespace AuthoriseXML
         static bool AuthoriseFailed = true;
         static void Main(string[] args)
         {
-            while (AuthoriseFailed)
+            List<Quiz> quizzes = new List<Quiz>();
+            quizzes.Add(new Quiz("Информатика"));
+            if (ConsoleCommand.UserStart() == "auth")
             {
-                ConsoleCommand.MustAuth();
-                AuthoriseFailed = Authorize.GetUserAuthorize(ConsoleCommand.Auth());
-                if (AuthoriseFailed) ConsoleCommand.FailedAuth();
+                while (AuthoriseFailed)
+                {
+                    ConsoleCommand.MustAuth();
+                    AuthoriseFailed = Authorize.GetUserAuthorize(ConsoleCommand.Auth());
+                    if (AuthoriseFailed) ConsoleCommand.FailedAuth();
+                }
+                if (!AuthoriseFailed) ConsoleCommand.SucessAuth();
+                while (true)
+                {
+                    ConsoleCommand.InformationAfterAuth();
+                    string[] command = Console.ReadLine().Split(" ");
+                    switch (command[0])
+                    {
+                        case "quizlist": foreach (Quiz q in quizzes) { Console.WriteLine($"{q.Name}"); }; break;
+                        case "startquiz":
+                            foreach (Quiz q in quizzes)
+                            {
+                                if (q.Name == command[1])
+                                {
+                                    Console.WriteLine($"Ваше счет: {q.StartQuiz()}");
+                                }
+                            };
+                            break;
+                        case "quizresults":; break;
+                        case "topquiz":; break;
+                        case "changesettings":; break;
+                        case "exit":; break;
+                        default:; break;
+                    }
+                }
             }
-            if (!AuthoriseFailed) ConsoleCommand.SucessAuth();
-        }
-    }
-
-    class User
-    {
-        string _name;
-        string _password;
-        DateTime _birthDate = DateTime.Now;
-        public string Login { get => _name; set => _name = value; }
-        public string Password { get => _password; set => _password = value; }
-        public DateTime DateOfBirth { get => _birthDate; set => _birthDate = value; }
-        public User(string name, string password, DateTime dateOfBirth)
-        {
-            Login = name;
-            Password = password;
-            DateOfBirth = dateOfBirth;
-        }
-        public User(string name, string password)
-        {
-            Login = name;
-            Password = password;
-        }
-    }
-
-    class Authorize
-    {
-        public static bool GetUserAuthorize(User user)
-        {
-            XmlDocument xdoc = new XmlDocument();
-            xdoc.Load("users.xml");
-            bool tmp = true;
-            foreach (XmlElement element in xdoc.GetElementsByTagName("user"))
+            else
             {
-                if (element.GetElementsByTagName("login")[0].InnerText == user.Login &&
-                    element.GetElementsByTagName("password")[0].InnerText == user.Password)
-                    tmp = false;
+                string login;
+                do
+                {
+                    Console.WriteLine("Введите желаемый логин");
+                    login = Console.ReadLine();
+                }
+                while (Authorize.ExistUser(login));
+                Console.WriteLine("Введите желаемый пароль");
+                string password = Console.ReadLine();
+                Console.WriteLine("Введите дату рождения в формате 2000.12.28");
+                string[] date = Console.ReadLine().Split('.');
+                DateTime dateOfBirth = new DateTime(Int32.Parse(date[0]), Int32.Parse(date[1]), Int32.Parse(date[2]));
+                Authorize.SaveUserData(login, password, dateOfBirth);
             }
-            return tmp;
-        }
-        static void SetUserData(string log, string pas, DateTime date)
-        {
 
-        }
 
-    }
 
-    class ConsoleCommand
-    {
-        public static void MustAuth()
-        {
-            Console.WriteLine("Авторизуйтесь! Заполните поля логина и пароля.");
-        }
-        public static User Auth()
-        {
-            Console.WriteLine("Введите логин:");
-            string login = Console.ReadLine();
-            Console.WriteLine("Введите логин:");
-            string password = Console.ReadLine();
-            User user = new User(login, password);
-            return user;
-        }
-        public static void SucessAuth()
-        {
-            Console.WriteLine("Вы успешно авторизовались.");
-        }
-        public static void FailedAuth()
-        {
-            Console.WriteLine("Вы не смогли авторизоваться.");
         }
     }
 }
